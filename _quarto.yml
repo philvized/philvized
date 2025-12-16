@@ -1,0 +1,31 @@
+project:
+  type: website
+
+website:
+  description: The Philippines, visualized.
+  site-url: https://your-website-url.example.com # you must change this appropriately for RSS feeds to work properly
+  title: philvized
+  navbar:
+    logo:
+      light: ico-light
+      dark: ico-dark
+    right:
+      - about.qmd
+      - icon: github
+        href: https://github.com/philvized
+        target: _blank
+      - icon: facebook
+        href: https://facebook.com/philvized
+        target: _blank
+      - icon: youtube
+        href: https://youtube.com/@philvized
+        target: _blank
+brand: brand/_brand.yml
+format:
+  html:
+    theme:
+      light: [brand, theme.scss]
+      dark: [brand, theme-dark.scss]
+    code-fold: true
+    code-overflow: wrap
+    link-external-newwindow: true

@@ -1,0 +1,18 @@
+/*-- scss:uses --*/
+
+/*-- scss:functions --*/
+
+/*-- scss:defaults --*/
+$navbar-fg: #9494d1ff !default;
+$navbar-hl: lighten(#9494d1ff, 20%) !default;
+
+/* -- scss:mixins --*/
+
+/*-- scss:rules --*/
+.navbar-title {
+    font-weight: 600;
+}
+
+.highlight {
+    color: var(--brand-orange);
+}

@@ -1,0 +1,95 @@
+---
+title: "Converting Philippine government's budget documents to tidy dataset"
+author: "philvized"
+date: "2025-12-01"
+categories: [code]
+image: "dbmgovph-screenshot.png"
+draft: true
+---
+
+## Introduction {#sec-introduction}
+
+*"Sana all"*[^1] is a popular Taglish[^2] slang among Filipinos. The closest English equivalent would be "must be nice", except the speaker wishes the experience for everyone. This is exactly how I feel whenever I come across government websites from other countries, usually from the developed ones, that are equipped with multiple ways to access public data.
+
+[^1]: literal translation: hope all
+
+[^2]: mixture of Tagalog and English
+
+*Sana all may API.* (It must be nice if every government, particularly mine, provides an API for accessing public data.)
+
+While the Philippine government has implemented several open data initiatives, including the passage of the Freedom of Information Act and OpenGov partnership, it still has a long way to go in publishing data that are catered for analysts. For instance, although the Department of Budget and Management (DBM) has posted [budget document archives](https://www.dbm.gov.ph/index.php/budget-documents-archives) dating back to 1980s, it is incomplete, with multiple years missing. Additionally, many documents are provided as scanned PDFs, which are challenging to work with.
+
+As I write this, I found an [open-source API for budget documents](https://github.com/bettergovph/open-budget-api) developed by a [group of Filipino engineers and volunteers](https://bettergov.ph/about) who share the sentiment as mine. However, I will not be using this API. Instead, my goal for this project is to build a tidy dataset straight from the source.
+
+## Downloading the data {#sec-downloading-the-data}
+
+The budget documents I am looking for are the National Expenditure Program (NEP) and General Appropriations Act (GAA). These documents live in the [DBM website](https://www.dbm.gov.ph) under the budget tab.
+
+```{r}
+#| code-fold: false
+page_home <- "https://www.dbm.gov.ph"
+page_budget <- paste(page_home, "index.php", "budget", sep = "/")
+```
+
+Let's retrieve the contents of `page_budget` using the `rvest` package's `read_html()` function.
+
+```{r}
+#| code-fold: false
+library(rvest)
+
+page_budget |> read_html()
+```
+
+`read_html()` returns a wrapped XML document. Let's unwrap it. Instead of using CSS selector to get the links of NEP and GAA per fiscal year in Budget Documents panel, I will just take all of the links in the `page_budget` and then filter the ones I needed using a pattern. These links live in `<a>` tag and are `href` attribute.
+
+I created a function that retrieves all hyperlinks from a specified web page and filters them based on a matching pattern.
+
+```{r}
+#' Extract and Filter Links from a Web Page
+#'
+#' This function retrieves all hyperlinks from a specified web page and filters them based on a matching pattern.
+#'
+#' @param page A character string representing the URL of the webpage to scrape. 
+#' @param pattern A regular expression pattern to filter the links.
+#' @param delay A numeric value indicating seconds to wait before fetching the page. Default is 2 seconds.
+#'
+#' @return A character vector containing all links that match the specified pattern.
+#' @export
+#'
+#' @examples
+#' # get_links("https://example.com", "pattern")
+get_links <- function(page, pattern, delay = 2) {
+  # Validate input parameters
+  if (!is.character(page) || length(page) != 1) {
+    stop("Invalid URL input. Please provide a single character string URL.")
+  }
+  
+  if (!is.character(pattern) || length(pattern) != 1) {
+    stop("Invalid pattern input. Please provide a single character string pattern.")
+  }
+
+  if (!is.numeric(delay) || delay < 0) {
+    stop("Delay must be a non-negative numeric value.")
+  }
+  
+  Sys.sleep(delay)  # Pause execution to avoid overwhelming the server
+  
+  # Extract links
+  links <- page |>
+    read_html() |> 
+    html_elements("a") |> 
+    html_attr("href") 
+
+  # Filter links using the specified pattern
+  filtered_links <- grepv(pattern = pattern, x = links)
+
+  return(filtered_links)
+}
+```
+
+```{r}
+#| code-fold: false
+pattern <- "\\d{4}/(general-appropriations-act|national-expenditure-program)"
+
+links_budget <- get_links(page_budget, pattern)
+```
